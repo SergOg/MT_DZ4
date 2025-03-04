@@ -94,7 +94,6 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-
         binding.stop.setOnClickListener {
             isTimer = false
             isTimer3++
