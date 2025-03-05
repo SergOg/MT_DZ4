@@ -1,4 +1,4 @@
-package ru.gb.multithreading_dz4
+package ru.gb.multithreading_dz4.presentation
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -10,8 +10,17 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ru.gb.multithreading_dz4.di.MyApplication
+import javax.inject.Inject
 
 class MainActivity : AppCompatActivity() {
+
+    // Внедрение зависимостей
+    @Inject
+    lateinit var coroutineScope: CoroutineScope
+    @Inject
+    lateinit var coroutineScope1: CoroutineScope
+
     private lateinit var binding: ActivityMainBinding
     private val scope = CoroutineScope(Dispatchers.IO)
     private val scope1 = CoroutineScope(Dispatchers.IO)
@@ -26,6 +35,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Инъекция зависимостей
+//        DaggerMainActivityComponent.builder().build().inject(this)
+
+        // Получаем компонент и инжектируем зависимости
+        (application as MyApplication).appComponent.inject(this)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -42,21 +58,7 @@ class MainActivity : AppCompatActivity() {
                 if (isTimer1) {
                     job = scope.launch {
                         createTimerValues1()
-                            .map {
-                                if (it < 10) {
-                                    if (minutes1 < 10) {
-                                        "0" + minutes1.toString() + ":0" + it.toString()
-                                    } else {
-                                        minutes1.toString() + ":0" + it.toString()
-                                    }
-                                } else {
-                                    if (minutes1 < 10) {
-                                        "0" + minutes1.toString() + ":" + it.toString()
-                                    } else {
-                                        minutes1.toString() + ":" + it.toString()
-                                    }
-                                }
-                            }
+                            .map {counter(it, minutes1)}
                             .collect {
                                 withContext(Dispatchers.Main) {
                                     binding.timer1.text = it.toString()
@@ -69,21 +71,7 @@ class MainActivity : AppCompatActivity() {
                 job1?.cancel()
                 job1 = scope1.launch {
                     createTimerValues2()
-                        .map {
-                            if (it < 10) {
-                                if (minutes2 < 10) {
-                                    "0" + minutes2.toString() + ":0" + it.toString()
-                                } else {
-                                    minutes2.toString() + ":0" + it.toString()
-                                }
-                            } else {
-                                if (minutes2 < 10) {
-                                    "0" + minutes2.toString() + ":" + it.toString()
-                                } else {
-                                    minutes2.toString() + ":" + it.toString()
-                                }
-                            }
-                        }
+                        .map {counter(it, minutes2)}
                         .collect {
                             withContext(Dispatchers.Main) {
                                 binding.timer2.text = it.toString()
@@ -91,7 +79,6 @@ class MainActivity : AppCompatActivity() {
                         }
                 }
             }
-
         }
 
         binding.stop.setOnClickListener {
@@ -128,6 +115,22 @@ class MainActivity : AppCompatActivity() {
                 }
                 if (minutes2 == 60) minutes2 = 0
                 emit(speed2)
+            }
+        }
+    }
+
+    fun counter(it: Int, minutes: Int): String {
+        if (it < 10) {
+            if (minutes < 10) {
+                return "0" + minutes.toString() + ":0" + it.toString()
+            } else {
+                return minutes.toString() + ":0" + it.toString()
+            }
+        } else {
+            if (minutes < 10) {
+                return "0" + minutes.toString() + ":" + it.toString()
+            } else {
+                return minutes.toString() + ":" + it.toString()
             }
         }
     }
